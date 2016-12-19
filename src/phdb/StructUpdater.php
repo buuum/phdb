@@ -1,6 +1,6 @@
 <?php
 
-namespace phdb;
+namespace Buuum;
 
 
 class StructUpdater

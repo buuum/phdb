@@ -1,0 +1,28 @@
+{
+  "name": "buuum/phdb",
+  "type": "library",
+  "description": "Event package for db migrations",
+  "homepage": "https://github.com/buuum/phdb",
+  "keywords": [
+    "migrations",
+    "db"
+  ],
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Alfons Martinez",
+      "email": "alfonsmartinezparra@gmail.com"
+    }
+  ],
+  "autoload": {
+    "psr-4": {
+      "Buuum\\": "src/phdb"
+    }
+  },
+  "require": {
+    "php": ">=5.5.0"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "*"
+  }
+}

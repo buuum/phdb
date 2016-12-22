@@ -98,82 +98,89 @@ class StructUpdater
 
     protected function getTableSql($struct, $table_name, $removeDatabase = true)
     {
-        $result = '';
-        $tableDef = '';
-        $database = false;
-
-        if (preg_match('/(CREATE(?:\s*TEMPORARY)?\s*TABLE\s*(?:IF NOT EXISTS\s*)?)(?:`?(\w+)`?\.)?(`?(' . $table_name . ')`?(\W|$))/i',
-            $struct, $m, PREG_OFFSET_CAPTURE)) {
-            $tableDef = $m[0][0];
-            $start = $m[0][1];
-            $database = $m[2][0];
-            $offset = $start + strlen($m[0][0]);
-            $end = $this->getDelimiterPos($struct, $offset);
-            if ($end === false) {
-                $result = substr($struct, $start);
-            } else {
-                $result = substr($struct, $start, $end - $start);
-            }
-        }
-        $result = trim($result);
-        if ($database && $removeDatabase) {
-            $result = str_replace($tableDef, $m[1][0] . $m[3][0], $result);
-        }
-        return $result;
+        $re = '/CREATE(?:[^\(]*)' . $table_name . '(?:[^\(]*)(?:[^;]*)/si';
+        preg_match($re, $struct, $matches);
+        return trim($matches[0]);
     }
 
-    protected function getDelimiterPos($string, $offset = 0, $delim = ';', $skipInBrackets = false)
-    {
-        $stack = [];
-        $rbs = '\\\\';
-        $regPrefix = "(?<!$rbs)(?:$rbs{2})*";
-        $reg = $regPrefix . '("|\')|(/\\*)|(\\*/)|(-- )|(\r\n|\r|\n)|';
-        if ($skipInBrackets) {
-            $reg .= '(\(|\))|';
-        } else {
-            $reg .= '()';
-        }
-        $reg .= '(' . preg_quote($delim) . ')';
-        while (preg_match('%' . $reg . '%', $string, $m, PREG_OFFSET_CAPTURE, $offset)) {
-            $offset = $m[0][1] + strlen($m[0][0]);
-            if (end($stack) == '/*') {
-                if (!empty($m[3][0])) {
-                    array_pop($stack);
-                }
-                continue;
-            }
-            if (end($stack) == '-- ') {
-                if (!empty($m[5][0])) {
-                    array_pop($stack);
-                }
-                continue;
-            }
+    //protected function getTableSqlOld($struct, $table_name, $removeDatabase = true)
+    //{
+    //    $result = '';
+    //    $tableDef = '';
+    //    $database = false;
+    //
+    //    if (preg_match('/(CREATE(?:\s*TEMPORARY)?\s*TABLE\s*(?:IF NOT EXISTS\s*)?)(?:`?(\w+)`?\.)?(`?(' . $table_name . ')`?(\W|$))/i',
+    //        $struct, $m, PREG_OFFSET_CAPTURE)) {
+    //        $tableDef = $m[0][0];
+    //        $start = $m[0][1];
+    //        $database = $m[2][0];
+    //        $offset = $start + strlen($m[0][0]);
+    //        $end = $this->getDelimiterPos($struct, $offset);
+    //        if ($end === false) {
+    //            $result = substr($struct, $start);
+    //        } else {
+    //            $result = substr($struct, $start, $end - $start);
+    //        }
+    //    }
+    //    $result = trim($result);
+    //    if ($database && $removeDatabase) {
+    //        $result = str_replace($tableDef, $m[1][0] . $m[3][0], $result);
+    //    }
+    //    return $result;
+    //}
 
-            if (!empty($m[7][0])) {
-                if (empty($stack)) {
-                    return $m[7][1];
-                }
-            }
-            if (!empty($m[6][0])) {
-                if (empty($stack) && $m[6][0] == '(') {
-                    array_push($stack, $m[6][0]);
-                } elseif ($m[6][0] == ')' && end($stack) == '(') {
-                    array_pop($stack);
-                }
-            } elseif (!empty($m[1][0])) {
-                if (end($stack) == $m[1][0]) {
-                    array_pop($stack);
-                } else {
-                    array_push($stack, $m[1][0]);
-                }
-            } elseif (!empty($m[2][0])) {
-                array_push($stack, $m[2][0]);
-            } elseif (!empty($m[4][0])) {
-                array_push($stack, $m[4][0]);
-            }
-        }
-        return false;
-    }
+    //protected function getDelimiterPos($string, $offset = 0, $delim = ';', $skipInBrackets = false)
+    //{
+    //    $stack = [];
+    //    $rbs = '\\\\';
+    //    $regPrefix = "(?<!$rbs)(?:$rbs{2})*";
+    //    $reg = $regPrefix . '("|\')|(/\\*)|(\\*/)|(-- )|(\r\n|\r|\n)|';
+    //    if ($skipInBrackets) {
+    //        $reg .= '(\(|\))|';
+    //    } else {
+    //        $reg .= '()';
+    //    }
+    //    $reg .= '(' . preg_quote($delim) . ')';
+    //    while (preg_match('%' . $reg . '%', $string, $m, PREG_OFFSET_CAPTURE, $offset)) {
+    //        $offset = $m[0][1] + strlen($m[0][0]);
+    //        if (end($stack) == '/*') {
+    //            if (!empty($m[3][0])) {
+    //                array_pop($stack);
+    //            }
+    //            continue;
+    //        }
+    //        if (end($stack) == '-- ') {
+    //            if (!empty($m[5][0])) {
+    //                array_pop($stack);
+    //            }
+    //            continue;
+    //        }
+    //
+    //        if (!empty($m[7][0])) {
+    //            if (empty($stack)) {
+    //                return $m[7][1];
+    //            }
+    //        }
+    //        if (!empty($m[6][0])) {
+    //            if (empty($stack) && $m[6][0] == '(') {
+    //                array_push($stack, $m[6][0]);
+    //            } elseif ($m[6][0] == ')' && end($stack) == '(') {
+    //                array_pop($stack);
+    //            }
+    //        } elseif (!empty($m[1][0])) {
+    //            if (end($stack) == $m[1][0]) {
+    //                array_pop($stack);
+    //            } else {
+    //                array_push($stack, $m[1][0]);
+    //            }
+    //        } elseif (!empty($m[2][0])) {
+    //            array_push($stack, $m[2][0]);
+    //        } elseif (!empty($m[4][0])) {
+    //            array_push($stack, $m[4][0]);
+    //        }
+    //    }
+    //    return false;
+    //}
 
     protected function compareSql($last_save_sql, $new_sql)
     {
@@ -241,41 +248,53 @@ class StructUpdater
 
     protected function splitTableSql($sql)
     {
-        $result = [];
+        $re = '/CREATE(?:[^\(]*)\((.*)\)/si';
+        preg_match($re, $sql, $matches);
 
-        $openBracketPos = $this->getDelimiterPos($sql, 0, '(');
-        if ($openBracketPos === false) {
-            trigger_error('[WARNING] can not find opening bracket in table definition');
-            return false;
-        }
-        $prefix = substr($sql, 0, $openBracketPos + 1);
-        $result[] = trim($prefix);
-        $body = substr($sql, strlen($prefix));
+        $result = $matches[1];
+        $result = explode(',', $result);
+        $result = array_map('trim', $result);
 
-        while (($commaPos = $this->getDelimiterPos($body, 0, ',', true)) !== false) {
-            $part = trim(substr($body, 0, $commaPos + 1));//read another part and shorten $body
-            if ($part) {
-                $result[] = $part;
-            }
-            $body = substr($body, $commaPos + 1);
-        }
-
-        $closeBracketPos = $this->getDelimiterPos($body, 0, ')');
-        if ($closeBracketPos === false) {
-            trigger_error('[WARNING] can not find closing bracket in table definition');
-            return false;
-        }
-
-        $part = substr($body, 0, $closeBracketPos);
-        $result[] = trim($part);
-
-        $suffix = substr($body, $closeBracketPos);
-        $suffix = trim($suffix);
-        if ($suffix) {
-            $result[] = $suffix;
-        }
         return $result;
     }
+
+    //protected function splitTableSqlOld($sql)
+    //{
+    //    $result = [];
+    //
+    //    $openBracketPos = $this->getDelimiterPos($sql, 0, '(');
+    //    if ($openBracketPos === false) {
+    //        trigger_error('[WARNING] can not find opening bracket in table definition');
+    //        return false;
+    //    }
+    //    $prefix = substr($sql, 0, $openBracketPos + 1);
+    //    $result[] = trim($prefix);
+    //    $body = substr($sql, strlen($prefix));
+    //
+    //    while (($commaPos = $this->getDelimiterPos($body, 0, ',', true)) !== false) {
+    //        $part = trim(substr($body, 0, $commaPos + 1));//read another part and shorten $body
+    //        if ($part) {
+    //            $result[] = $part;
+    //        }
+    //        $body = substr($body, $commaPos + 1);
+    //    }
+    //
+    //    $closeBracketPos = $this->getDelimiterPos($body, 0, ')');
+    //    if ($closeBracketPos === false) {
+    //        trigger_error('[WARNING] can not find closing bracket in table definition');
+    //        return false;
+    //    }
+    //
+    //    $part = substr($body, 0, $closeBracketPos);
+    //    $result[] = trim($part);
+    //
+    //    $suffix = substr($body, $closeBracketPos);
+    //    $suffix = trim($suffix);
+    //    if ($suffix) {
+    //        $result[] = $suffix;
+    //    }
+    //    return $result;
+    //}
 
     protected function processLine($line)
     {

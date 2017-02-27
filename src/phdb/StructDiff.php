@@ -295,17 +295,17 @@ class StructDiff
      */
     protected function getTables($struct)
     {
-        $re = '/CREATE\s(?:[^\(]*)\s(\w+)\s(?:[^\(]*)(?:[^;]*)/is';
+        $re = '/CREATE(?:\s*TEMPORARY)?\s*TABLE\s*(?:IF NOT EXISTS\s*)?(?:`?(\w+)`?\.)?`?(\w+)`?\s*\((?:[^\(]*)(?:[^;]*)\)/si';
         preg_match_all($re, $struct, $matches);
         $regex = '/CREATE\sINDEX\s(.*)/si';
         $tables = [];
         foreach ($matches[0] as $n => $match) {
             preg_match($regex, $match, $index);
             if (!empty($index)) {
-                $tables[$matches[1][$n]]['indexes'][] = $match;
+                $tables[$matches[2][$n]]['indexes'][] = $match;
             } else {
-                $tables[$matches[1][$n]]['table'][] = $match;
-                $tables[$matches[1][$n]]['foreigns'] = $this->getForeigns($match);
+                $tables[$matches[2][$n]]['table'][] = $match;
+                $tables[$matches[2][$n]]['foreigns'] = $this->getForeigns($match);
             }
         }
         return $tables;
@@ -317,7 +317,7 @@ class StructDiff
      */
     protected function getForeigns($table)
     {
-        $re = '/CONSTRAINT\s(\w+)\sFOREIGN\sKEY\s\(([^,]\w+)\)\sREFERENCES\s([^,;]*)(?:,|;|\s\))$/ims';
+        $re = '/CONSTRAINT\s\`?(\w+)\`?\s*FOREIGN\sKEY\s\(\`?([^,]\w+)\`?\)\sREFERENCES\s\`?(\w*)\`?\s*\(\`?(?:\w+)\`?\)\s*(?:[^)]+)/ims';
         preg_match_all($re, $table, $matches);
         if (empty($matches)) {
             return [];
@@ -358,10 +358,10 @@ class StructDiff
      */
     protected function getFieldNameFromLine($line)
     {
-        $re = '/(\w+)\s/s';
+        $re = '/\`?(\w+)\`?\s/s';
         preg_match($re, $line, $matches);
         if (!empty($matches)) {
-            return trim($matches[0]);
+            return trim($matches[1]);
         }
         return false;
     }

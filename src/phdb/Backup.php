@@ -42,8 +42,6 @@ class Backup
         }
 
         foreach ($this->tables as $table) {
-            $result = mysqli_query($this->link, "SELECT * FROM $table");
-            $num_fields = mysqli_num_fields($result);
 
             if ($schema) {
                 // $this->output .= 'DROP TABLE ' . $table . ';';
@@ -55,6 +53,9 @@ class Backup
             }
 
             if ($datos) {
+                $result = mysqli_query($this->link, "SELECT * FROM $table");
+                $num_fields = mysqli_num_fields($result);
+
                 for ($i = 0; $i < $num_fields; $i++) {
                     while ($row = mysqli_fetch_row($result)) {
                         $this->output .= 'INSERT INTO ' . $table . ' VALUES(';
